@@ -32,16 +32,7 @@ library(dplyr)
 #' @param end_time string is the YYYY/MM/DD end time to cut off the sampled random dates (default is today's date)
 #' @return vector of random dates length size
 #' @export
-random_date <- function(size = 100, seed = 2, start_time = "1930/01/01", end_time = Sys.Date()) {
-  start_time <- as.POSIXct(as.Date(start_time))
-  end_time <- as.POSIXct(as.Date(end_time))
-  date_time <- as.numeric(difftime(end_time, start_time, unit = "sec"))
-  set.seed(seed)
-  end_value <- sort(runif(size, 0, date_time))
-  random_time <- start_time + end_value
-  random_time <- as.Date(random_time)
-  return(random_time)
-}
+
 
 #' generateTestPERSON
 #' @param size integer is the number of dates to simulate (default is 100)
@@ -128,6 +119,7 @@ get_hcc_grid <- function(PERSON, DIAG, cmshcc_map) {
 #' @return numeric age
 #' @export
 person_age <- function(DOB, ASOF=Sys.Date()) {
+  DOB <-as.Date(DOB, format ='%m/%d/%Y')
   as.numeric(round(difftime(ASOF, DOB, units = "weeks")/52.25))
 }
 
@@ -147,10 +139,9 @@ person_age_band <- function(ages,  genders, breaks = c(0, 34, 44, 54, 59, 64, 69
 #' @param DIAG
 #' @param model_type
 #' @export
-evaluate_v22_2017 <- function(PERSON, DIAG, model_type) {
-  
+PERSON <- unique(PERSON)
+evaluate_v22_2017 <- function(PERSON, DIAG, model_type, hcc_grid = NULL) {
   factors_v22_2017$description <- NULL
-  
   PERSON$AGE <- person_age(PERSON$DOB)
   PERSON$AGE_BAND <- person_age_band(PERSON$AGE, PERSON$SEX)
   PERSON$DISABL <- (PERSON$AGE < 65) & (PERSON$OREC != 0)
@@ -179,7 +170,9 @@ evaluate_v22_2017 <- function(PERSON, DIAG, model_type) {
   PERSON$demographic_interaction_score <- as.matrix(PERSON[, demographic_interaction_factors_names]) %*% as.matrix(demographic_interaction_factors)
   
   # Condition factors
-  hcc_grid <- get_hcc_grid(PERSON, DIAG, cmshcc_map)
+  if(missing(hcc_grid)) {
+    hcc_grid <- get_hcc_grid(PERSON, DIAG, cmshcc_map)
+  }
   PERSON <- merge(PERSON, hcc_grid, by = "HICNO")
     
   # Apply Hierarchies
@@ -291,8 +284,9 @@ evaluate_v22_2017 <- function(PERSON, DIAG, model_type) {
   PERSON$demographic_condition_interaction_score <- as.matrix(PERSON[, demographic_condition_interaction_factors_names]) %*% as.matrix(demographic_condition_interaction_factors)
   
   # Add final score
-  results <- PERSON$demographic_score + PERSON$demographic_interaction_score + PERSON$condition_score + PERSON$condition_interaction_score + PERSON$demographic_condition_interaction_score
+  results <- PERSON$demographic_score + PERSON$demographic_interaction_score + PERSON$condition_score + PERSON$condition_interaction_score + PERSON$demographic_condition_interaction_score 
   results <- as.data.frame(results)
   names(results) <- c(model_type)
-  return(results)
+  final <- cbind(PERSON$HICNO, results)
+  return(final)
 }
