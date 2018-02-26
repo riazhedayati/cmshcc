@@ -89,6 +89,8 @@ load_cmshcc_map <- function() {
   return(cmshcc_map)
 }
 
+cmshcc_map <- load_cmshcc_map()
+
 #' get_hcc_grid
 #' @param 
 #' @param
@@ -291,6 +293,14 @@ evaluate_v22_2017 <- function(PERSON, DIAG, model_type, hcc_grid = NULL) {
   return(final)
 }
 
+
+## Change these inputs: 
+#when DIAG is already in grid format
 output <- evaluate_v22_2017(PERSON, DIAG,"Community_NonDual_Aged", hcc_grid = DIAG_PVT)
 final_result <- merge(output, DIAG_PVT, by.x = "PERSON$HICNO", by.y="HICNO")
 final_result
+
+#when DIAG is from dxs.csv
+output1 <- evaluate_v22_2017(PERSON,DIAG,"Community_NonDual_Aged", hcc_grid = NULL)
+final_result2 <- merge(output, DIAG_PVT,by.x = "PERSON$HICNO", by.y="HICNO")
+final_result 
