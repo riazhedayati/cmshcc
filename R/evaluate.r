@@ -290,3 +290,7 @@ evaluate_v22_2017 <- function(PERSON, DIAG, model_type, hcc_grid = NULL) {
   final <- cbind(PERSON$HICNO, results)
   return(final)
 }
+
+output <- evaluate_v22_2017(PERSON, DIAG,"Community_NonDual_Aged", hcc_grid = DIAG_PVT)
+final_result <- merge(output, DIAG_PVT, by.x = "PERSON$HICNO", by.y="HICNO")
+final_result
